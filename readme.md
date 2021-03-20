@@ -1,5 +1,5 @@
 # Invoice Generator
-This generates an invoice from a csv file.
+This generates a pdf invoice from a csv file.
 
 ## Requirements
 ### R and RStudio
