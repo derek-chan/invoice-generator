@@ -1,0 +1,5 @@
+﻿invoice_no,date_issue,description,amount,quantity,bill_to
+1,3/8/21,Item 1<br/>*Article 1*,6000,1,Joe Q. Public<br/>1600 Pennsylvania Avenue<br/>Washington DC 20500
+2,3/10/21,Activities (hourly rate)<br/>*Activités (taux horaire)*,30,2.5,Joe Q. Public<br/>1600 Pennsylvania Avenue<br/>Washington DC 20500
+2,,Activites (daily rate)<br/>*Activités (taux quotidien)*,240,2,
+2,,Final Report</br>*Rapport final*,3574,1,

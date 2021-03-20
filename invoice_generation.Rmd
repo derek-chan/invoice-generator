@@ -1,0 +1,194 @@
+---
+title: Invoice
+params:
+  invoice_number_print: 
+    value: "0002"
+output:
+  html_document
+    
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(tidyverse)
+library(lubridate)
+# read data, select only relevant invoice number
+input_values <- read.csv(file = "invoice_input.csv", header = FALSE, stringsAsFactors=FALSE)
+invoice_number <- str_remove(params$invoice_number_print, "^0+")
+names(input_values) <- as.matrix(input_values[1,])
+input_values <- input_values[-1,]
+input_values<- filter(input_values, input_values$invoice_no == invoice_number)
+input_values$date_issue <- as.Date(input_values$date_issue,format="%m/%d/%y")
+input_values$amount <- as.numeric(input_values$amount)
+input_values$quantity <- as.numeric(input_values$quantity)
+input_values <- cbind(input_values,total=input_values$quantity*input_values$amount)
+# catastrophic date modification, but this way you can have months in a second language
+date_issue <- as.Date(input_values[1,]$date_issue,"%b %d %y")
+# Change the due date below as a factor of the issue date
+date_due <- as.Date(input_values[1,]$date_issue)+14
+month_en <- data.frame(months=  c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul","Aug","Sep","Oct","Nov","Dec"),
+                       monthvalue = c(1:12))
+month_fr <- data.frame(months=  c("jan", "fév", "mar", "avr", "mai", "jun", "jul","aoû","sep","oct","nov","dec"),
+                       monthvalue = c(1:12))
+date_issue_year <- year(date_issue)
+date_issue_month <- month(date_issue)
+date_issue_month_en <- month_en[date_issue_month,1]
+date_issue_month_fr <- month_fr[date_issue_month,1]
+date_issue_day <- day(date_issue)
+date_due_year <- year(date_due)
+date_due_month <- month(date_due)
+date_due_month_en <- month_en[date_due_month,1]
+date_due_month_fr <- month_fr[date_due_month,1]
+date_due_day <- day(date_due)
+date_due_year <- year(date_due)
+
+bill_to <- input_values[1,]$bill_to
+
+```
+<!-- css styles below -->
+```{css, echo=FALSE}
+.noborder table {
+  border-spacing: 0;
+  
+}
+.author,.title{
+    display: none;
+}
+#highlight {
+  font-weight: bold;
+  color: #6A0DAD !important;
+}
+#ital {
+  font-weight: bold;
+  font-style: italic;
+  color: #6A0DAD !important;
+  
+}
+.section {
+  display: inline-block;
+  width: 100%;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-style: none;
+}
+.line {
+  display: inline-block;
+  width: 100%;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  border-style: none;
+}
+.right {
+  border-style: none;
+  width: 27%;
+  float: right;
+  text-align: left;
+  display: inline-block;
+}
+
+.left {
+  border-style: none;
+  margin-left: 0;
+  float: left;
+  width: 67%;
+  display: inline-block;
+}
+.right-even {
+  border-style: none;
+  margin-left: 50%;
+  margin-top: 0;
+  width: 45%;
+  flex: 1;
+  text-align: left;
+  display: block;
+}
+
+.left-even {
+  border-style: none;
+  margin-left: 0;
+  float: left;
+  width: 50%;
+  display: block;
+}
+```
+<!-- header -->
+<span class=section>
+  <span class=left>![logo](logo.png)</span>
+  <span class=right><br/><br/><span id="highlight">Xanthippe Teripschore</span><br/>123 Sesame Street<br/>Springfield MA 01020</span>
+</span>
+<span class=section>
+  <span id="highlight">Billed to | </span><span id="ital">Facturé à</span><br/>`r bill_to`
+  </span>
+</span>
+
+<!-- invoice information  -->
+<span class=section>
+  <span class=line>
+    <span class=left-even>
+      <span id="highlight">Invoice number | </span><span id="ital">Numéro du facture:</span>
+    </span>
+    <span class=right-even>`r invoice_number_print`</span>
+  </span>
+  <span class=line>
+    <span class=left-even><span id="highlight">Date issued | </span><span id="ital">Date d'émission:</span></span>
+    <span class=right-even>`r paste(date_issue_month_en, " ", date_issue_day, ", ", date_issue_year, " | *", date_issue_day, " ", date_issue_month_fr, ", ", date_issue_year, "*", sep="")`</span>
+  </span>
+  <span class=line>
+    <span class=left-even><span id="highlight">Date due | </span><span id="ital">Échéance:</span></span>
+    <span class=right-even>`r paste(date_due_month_en, " ", date_due_day, ", ", date_due_year, " | *", date_due_day, " ", date_due_month_fr, ", ", date_due_year, "*", sep="")`</span>
+  </span>
+</span>
+<!-- invoice table -->
+
+```{r table-simple, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+require(pander)
+ panderOptions('table.split.table', Inf)
+ df <- c("**Description <br/> *Déscription***", "**Amount <br/> *Montant***", "**Quantity <br/> *Quantité***", "**Total <br/> *Total***")
+ for (i in 1:nrow(input_values)){
+current_row_data <- input_values[i,]
+  df <- rbind(df,
+              c(current_row_data$description,
+                paste("$",format(round(current_row_data$amount,2),nsmall=2,big.mark=","),sep=""),
+                format(current_row_data$quantity,big.mark=","),
+                paste("$",format(round(current_row_data$total,2),nsmall=2,big.mark=","),sep="")))
+}
+ df <- rbind(df,c("Subtotal | *Sous-total*","","",paste("$",format(round(sum(input_values$total),2),nsmall=2,big.mark=","),sep="")),
+             c("Tax | *Taxe*","","","$0.00"),
+             c("**Amount due | *Montant dû***","","",paste("**$",format(round(sum(input_values$total),2),nsmall=2,big.mark=","),"**",sep="")))
+  row.names(df)<-NULL
+   panderOptions('table.alignment.default', c('left', 'right', 'right', 'right'))
+  
+pandoc.table(df, style='rmarkdown', split.cells=Inf)
+```
+
+<!-- bottom material -->
+<span class=section>
+  <span id="highlight">Banking information</span><br/>
+  <span id="ital">Information bancaire</span>
+</span>
+<span class=section>
+  <span class=line>
+    <span class=left-even>Name | *Nom*:</span>
+    <span class=right-even>Xanthippe Persephone Terpischore</span>
+  </span>
+  <span class=line>
+    <span class=left-even>Bank name | *Nom du banque*:</span>
+    <span class=right-even>New England Credit Union</span>
+  </span>
+  <span class=line>
+    <span class=left-even>Bank address | *Adresse du banque*:</span>
+    <span class=right-even>123 Main Street, Burlington VT, 05401, USA</span>
+  </span>
+  <span class=line>
+    <span class=left-even>Account number | *Numéro du compte*:</span>
+    <span class=right-even>1234567890</span>
+  </span>
+  <span class=line>
+    <span class=left-even>Routing number | *Numéro de routage*: </span>
+    <span class=right-even>9876543210</span>
+  </span>
+</span>
+<span class=section>
+![signature](sig.png)
+</span>
