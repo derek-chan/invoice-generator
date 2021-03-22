@@ -1,12 +1,3 @@
-# In case you need to install packages (only need to be done once)
-# highlight this section and run
-install.packages('rmarkdown')
-install.packages('pagedown')
-install.packages('fs')
-install.packages('pagedown')
-install.packages('withr')
-install.packages('stringr')
-
 # require these packages
 library(pagedown)
 library(withr)
